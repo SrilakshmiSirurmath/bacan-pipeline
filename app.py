@@ -105,7 +105,7 @@ st.markdown(
 # Sidebar config
 with st.sidebar:
     st.header("Settings")
-    model = st.selectbox("OpenAI model", ["gpt-4o-mini", "gpt-4o"], index=0)
+    model = st.selectbox("OpenAI model", ["gpt-4o"], index=0)
     st.caption("Tip: start with gpt-4o-mini for cost/speed, switch to gpt-4o if extraction struggles.")
 
 st.subheader("1) Upload files (bulk)")
