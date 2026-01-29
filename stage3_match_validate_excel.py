@@ -656,7 +656,7 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
         lit = liters_from_invoice(l)
         if lit is not None:
             ead_liters_vals.append(float(lit))
-    ead_liters_sum = sum(inv_liters_vals) if inv_liters_vals else None
+    ead_liters_sum = sum(ead_liters_vals) if ead_liters_vals else None
 
     if inv_liters_sum is not None and ead_liters_sum is not None:
         if abs(inv_liters_sum - ead_liters_sum) > max(1.0, 0.005 * ead_liters_sum):
