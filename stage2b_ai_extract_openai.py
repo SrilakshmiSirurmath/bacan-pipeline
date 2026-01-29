@@ -131,7 +131,8 @@ Header fields to extract if present:
 Additionally extract:
 - denominazione_origine from (17.X.l) Denominazione di origine
 - designazione_commerciale from (17.X.p) Designazione commerciale
--supplier_name from (2.b) Nome dello speditore (shipper's name)
+supplier_name: extract from (2.b) Nome dello speditore. Capture the entire value after this label, 
+including spaces and punctuation, until the next numbered field (e.g., “(2.c)”, “(3.)”, “(4.)”) or a new section header. Do not shorten or paraphrase.
 
 Output one row per product progressivo (17.1, 17.2, ...).
 Each row MUST include progressivo.
