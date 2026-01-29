@@ -75,7 +75,7 @@ def run_one_job(invoice_pdf_bytes: bytes, ead_pdf_bytes: bytes, model: str) -> T
         matches,
         template_path=Path(__file__).parent / "Packing List template.xlsx",
         inv_ai=inv_ai,
-        ead_ai=ead_ai
+        ead_ai=ead_text
         )
 
 
