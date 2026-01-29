@@ -57,7 +57,9 @@ def run_one_job(invoice_pdf_bytes: bytes, ead_pdf_bytes: bytes, model: str) -> T
         inv = normalize_invoice_rows(inv_ai)
         ead = normalize_ead_rows(ead_ai)
 
-        shipment_issues = validate_shipment(inv_ai, ead_ai, inv["lines"], ead["lines"])
+        shipment_issues = validate_shipment(
+        inv_ai, ead_ai, inv["lines"], ead["lines"],
+        invoice_text=invoice_text, ead_text=ead_text)
 
         # Matching + line-level checks
         matches = match_invoice_to_ead(inv["lines"], ead["lines"])
