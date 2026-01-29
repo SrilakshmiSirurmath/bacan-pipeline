@@ -728,22 +728,69 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
 # -----------------------------
 # Output
 # -----------------------------
+#def build_output_df(matches):
+    #rows = []
+    #for inv, ead, score in matches:
+        #rows.append({
+            #"DESCRIPTION": inv.get("description"),
+            #"DENOMINAZIONE DI ORIGINE": (ead.get("denominazione_origine") if ead else None),
+            #"CUSTOMS COMMODITY CODE": inv.get("cn_code") or (ead.get("cn_code") if ead else None),
+            #"% ALCOHOL": inv.get("abv_percent") if inv.get("abv_percent") is not None else (ead.get("abv_percent") if ead else None),
+            #"CASES / COLLI": inv.get("cases") or (ead.get("cases") if ead else None),
+            #"BOTTLES PER CASE": inv.get("bottles_per_case"),
+            #"BOTTLE SIZE (L)": normalize_bottle_liters(inv.get("bottle_liters")),
+            #"TOTAL LITERS (calc)": liters_from_invoice(inv),
+            #"EAD LITERS": ead.get("ead_liters") if ead else None,
+            #"GROSS WEIGHT (KG)": ead.get("ead_gross_kg") if ead else None,
+            #"NET WEIGHT (KG)": ead.get("ead_net_kg") if ead else None,
+            #"INVOICE VALUE (EUR)": inv.get("invoice_value_eur"),
+            #"LOT": inv.get("lot"),
+            #"EAD PROGRESSIVO": ead.get("progressivo") if ead else None,
+            #"MATCH_SCORE": score,
+       # })
+    #return pd.DataFrame(rows)
+
+
 def build_output_df(matches):
     rows = []
     for inv, ead, score in matches:
         rows.append({
-            "DESCRIPTION": inv.get("description"),
+            # Prefer EAD description if present (designazione commerciale is the cleanest)
+            "DESCRIPTION": (
+                (ead.get("designazione_commerciale") if ead else None)
+                or (ead.get("designation") if ead else None)
+                or (ead.get("description") if ead else None)
+                or inv.get("description")
+            ),
+
             "DENOMINAZIONE DI ORIGINE": (ead.get("denominazione_origine") if ead else None),
-            "CUSTOMS COMMODITY CODE": inv.get("cn_code") or (ead.get("cn_code") if ead else None),
-            "% ALCOHOL": inv.get("abv_percent") if inv.get("abv_percent") is not None else (ead.get("abv_percent") if ead else None),
-            "CASES / COLLI": inv.get("cases") or (ead.get("cases") if ead else None),
+
+            # EAD first
+            "CUSTOMS COMMODITY CODE": (ead.get("cn_code") if ead else None) or inv.get("cn_code"),
+
+            # EAD first
+            "% ALCOHOL": (
+                (ead.get("abv_percent") if ead else None)
+                if (ead and ead.get("abv_percent") is not None)
+                else inv.get("abv_percent")
+            ),
+
+            # EAD first
+            "CASES / COLLI": (ead.get("cases") if ead else None) or inv.get("cases"),
+
+            # Packaging detail usually only invoice has
             "BOTTLES PER CASE": inv.get("bottles_per_case"),
             "BOTTLE SIZE (L)": normalize_bottle_liters(inv.get("bottle_liters")),
+
             "TOTAL LITERS (calc)": liters_from_invoice(inv),
             "EAD LITERS": ead.get("ead_liters") if ead else None,
+
             "GROSS WEIGHT (KG)": ead.get("ead_gross_kg") if ead else None,
             "NET WEIGHT (KG)": ead.get("ead_net_kg") if ead else None,
+
+            # This MUST come from invoice (EAD doesn't carry item value)
             "INVOICE VALUE (EUR)": inv.get("invoice_value_eur"),
+
             "LOT": inv.get("lot"),
             "EAD PROGRESSIVO": ead.get("progressivo") if ead else None,
             "MATCH_SCORE": score,
