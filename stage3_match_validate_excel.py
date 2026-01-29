@@ -288,7 +288,14 @@ def normalize_ead_rows(ai_ead) -> dict:
         prog = r.progressivo if r.progressivo is not None else idx
         prog = int(prog)
 
-        designazione_commerciale = getattr(r, "designazione_commerciale", None)
+        desc = (getattr(r, "description", "") or "").strip()
+        extra = (getattr(r, "designazione_commerciale", "") or "").strip()
+
+        if extra and extra.lower() not in desc.lower():
+            designazione_commerciale = f"{desc} {extra}".strip()
+        else:
+            designazione_commerciale = desc        
+        
         designation = getattr(r, "designation", None) or getattr(r, "description", None) or ""
         denominazione_origine = getattr(r, "denominazione_origine", None)
 
@@ -302,6 +309,7 @@ def normalize_ead_rows(ai_ead) -> dict:
             "ead_net_kg": safe_float(r.ead_net_kg),
             "designation": re.sub(r"\s+", " ", (designation or "")).strip(),
             "denominazione_origine": re.sub(r"\s+", " ", denominazione_origine).strip() if denominazione_origine else None,
+            "designazione_commerciale": re.sub(r"\s+", " ", (designazione_commerciale or "")).strip() if designazione_commerciale else None,
             "cases": r.cases,  # often None per product line
         })
 
