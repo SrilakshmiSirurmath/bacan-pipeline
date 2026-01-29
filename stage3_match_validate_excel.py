@@ -288,6 +288,7 @@ def normalize_ead_rows(ai_ead) -> dict:
         prog = r.progressivo if r.progressivo is not None else idx
         prog = int(prog)
 
+        designazione_commerciale = getattr(r, "designazione_commerciale", None)
         designation = getattr(r, "designation", None) or getattr(r, "description", None) or ""
         denominazione_origine = getattr(r, "denominazione_origine", None)
 
