@@ -622,7 +622,7 @@ def build_output_df(matches):
         rows.append({
             # Prefer EAD description if present (designazione commerciale is the cleanest)
             "DESCRIPTION": (
-                (ead.get("denominazione_origine") if ead else None)
+                (ead.get("designazione_commerciale") if ead else None)
             ),
 
             "DENOMINAZIONE DI ORIGINE": (ead.get("denominazione_origine") if ead else None),
