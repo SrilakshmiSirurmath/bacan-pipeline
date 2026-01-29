@@ -17,12 +17,43 @@ import json
 import re
 from collections import Counter
 from rapidfuzz import fuzz 
-
+from openpyxl import load_workbook
+from io import BytesIO
 
 import pandas as pd
 
 from stage2b_ai_extract_openai import ai_extract_invoice, ai_extract_ead
 from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
+
+
+def build_customs_excel(matches, template_path: str) -> bytes:
+    df = build_output_df(matches)
+
+    wb = load_workbook(template_path)
+    ws = wb.active
+
+    start_row = 14  # where items start in template
+
+    for idx, row in df.iterrows():
+        r = start_row + idx
+
+        pieces = None
+        if row["CASES / COLLI"] and row["BOTTLES PER CASE"]:
+            pieces = int(row["CASES / COLLI"]) * int(row["BOTTLES PER CASE"])
+
+        ws[f"A{r}"] = idx + 1
+        ws[f"B{r}"] = row["DESCRIPTION"]
+        ws[f"C{r}"] = row["CUSTOMS COMMODITY CODE"]
+        ws[f"D{r}"] = row["% ALCOHOL"]
+        ws[f"E{r}"] = pieces
+        ws[f"F{r}"] = row["GROSS WEIGHT (KG)"]
+        ws[f"G{r}"] = row["NET WEIGHT (KG)"]
+        ws[f"H{r}"] = row["INVOICE VALUE (EUR)"]
+        ws[f"I{r}"] = row["DENOMINAZIONE DI ORIGINE"]
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
 
 
 # ------------------------------------------------------------
