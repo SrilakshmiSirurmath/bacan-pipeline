@@ -90,7 +90,7 @@ Extraction rules:
 - supplier_eori: EORI code of the supplier
 - supplier_rex: REX number of the supplier
 - incoterm: value following “Incoterms =” or similar (incoterm must include both the 3-letter incoterm code AND the location that follows it.
-Examples: "EXW CVA", "FCA Warehouse", "DAP Milan". Do not truncate after the 3-letter code)
+Examples: "EXW CVA", "FCA CVA", "DAP EXW". Do not truncate after the 3-letter code)
 
 
 These fields are usually in header or footer sections, not in the product table.
