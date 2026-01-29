@@ -26,13 +26,13 @@ from stage2b_ai_extract_openai import ai_extract_invoice, ai_extract_ead
 from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
 
 
-def build_customs_excel(matches, template_path: str,inv_ai) -> bytes:
+def build_customs_excel(matches, template_path: str, inv_ai) -> bytes:
     df = build_output_df(matches)
 
     wb = load_workbook(template_path)
     ws = wb.active
 
-    # --- Fill INVOICE LEVEL DATA (once) ---
+    # --- Fill INVOICE LEVEL DATA ---
     ws["C3"] = inv_ai.supplier_name
     ws["C4"] = inv_ai.supplier_eori
     ws["C5"] = inv_ai.supplier_rex
@@ -40,6 +40,7 @@ def build_customs_excel(matches, template_path: str,inv_ai) -> bytes:
 
     start_row = 14  # where items start in template
 
+    # --- Fill item rows ---
     for idx, row in df.iterrows():
         r = start_row + idx
 
@@ -56,6 +57,23 @@ def build_customs_excel(matches, template_path: str,inv_ai) -> bytes:
         ws[f"G{r}"] = row["NET WEIGHT (KG)"]
         ws[f"H{r}"] = row["INVOICE VALUE (EUR)"]
         ws[f"I{r}"] = row["DENOMINAZIONE DI ORIGINE"]
+
+    # --- Clear unused template rows ---
+    last_filled_row = start_row + len(df) - 1
+    max_template_rows = start_row + 20  # buffer
+
+    for r in range(last_filled_row + 1, max_template_rows):
+        for col in ["A","B","C","D","E","F","G","H","I"]:
+            ws[f"{col}{r}"] = None
+
+    # --- Dynamic TOTAL row ---
+    total_row = start_row + len(df)
+
+    ws[f"C{total_row}"] = "TOTAL"
+    ws[f"E{total_row}"] = f"=SUM(E{start_row}:E{total_row-1})"
+    ws[f"F{total_row}"] = f"=SUM(F{start_row}:F{total_row-1})"
+    ws[f"G{total_row}"] = f"=SUM(G{start_row}:G{total_row-1})"
+    ws[f"H{total_row}"] = f"=SUM(H{start_row}:H{total_row-1})"
 
     buf = BytesIO()
     wb.save(buf)
