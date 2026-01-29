@@ -94,7 +94,7 @@ def build_customs_excel(matches, template_path: str, inv_ai, ead_text) -> bytes:
         ws[f"F{r}"] = row["GROSS WEIGHT (KG)"]
         ws[f"G{r}"] = row["NET WEIGHT (KG)"]
         ws[f"H{r}"] = row["INVOICE VALUE (EUR)"]
-        ws[f"I{r}"] = country_from_denom(row.get("DENOMINAZIONE DI ORIGINE", ""))
+        ws[f"I{r}"] = country_from_denom(row["DENOMINAZIONE DI ORIGINE"])
 
     # --- Clear unused template rows ---
     last_filled_row = start_row + len(df) - 1
