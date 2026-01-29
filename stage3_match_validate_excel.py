@@ -25,6 +25,20 @@ import pandas as pd
 from stage2b_ai_extract_openai import ai_extract_invoice, ai_extract_ead
 from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
 
+def country_from_denom(denom: str) -> str:
+    d = (denom or "").upper()
+
+    if any(x in d for x in ["DOC", "DOCG", "IGT", "SICILIA", "ITALIA", "NERO D'AVOLA"]):
+        return "Italy"
+
+    if any(x in d for x in ["AOC", "AOP", "BORDEAUX", "BURGUNDY", "CHAMPAGNE"]):
+        return "France"
+
+    if any(x in d for x in ["DO", "DOCA", "RIOJA", "RIBERA"]):
+        return "Spain"
+
+    return ""
+
 def shipper_name_from_ead_text(ead_text: str) -> str | None:
     t = ead_text or ""
     # keep line structure
@@ -80,7 +94,7 @@ def build_customs_excel(matches, template_path: str, inv_ai, ead_text) -> bytes:
         ws[f"F{r}"] = row["GROSS WEIGHT (KG)"]
         ws[f"G{r}"] = row["NET WEIGHT (KG)"]
         ws[f"H{r}"] = row["INVOICE VALUE (EUR)"]
-        ws[f"I{r}"] = row["DENOMINAZIONE DI ORIGINE"]
+        ws[f"I{r}"] = country_from_denom(row.get("DENOMINAZIONE DI ORIGINE", ""))
 
     # --- Clear unused template rows ---
     last_filled_row = start_row + len(df) - 1
