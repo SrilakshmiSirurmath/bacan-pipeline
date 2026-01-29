@@ -84,13 +84,11 @@ Extraction rules:
    (In these, bottles_per_case=6 or 12 and bottle_liters=0.75)
 5) If cases is missing but bottles_total is present, set bottles_total and leave cases null.
 6) If a value is not present, set it to null. Do not guess.
-
-Additionally extract from the invoice header:
-
+7) Additionally extract from the invoice header:
 - supplier_name: the winery / issuer of the invoice (not the buyer, not the transporter)
 - supplier_eori: EORI code of the supplier
 - supplier_rex: REX number of the supplier
-- incoterm: value following “Incoterms =” or similar (Incoterm must include both the 3-letter incoterm code AND the location that follows it.
+- incoterm: value following “Incoterms =” or similar (incoterm must include both the 3-letter incoterm code AND the location that follows it.
 Examples: "EXW CVA", "FCA Warehouse Marsala", "DAP Milan". Do not truncate after the 3-letter code. Return the full phrase exactly as written)
 
 
