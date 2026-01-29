@@ -26,14 +26,14 @@ from stage2b_ai_extract_openai import ai_extract_invoice, ai_extract_ead
 from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
 
 
-def build_customs_excel(matches, template_path: str, inv_ai) -> bytes:
+def build_customs_excel(matches, template_path: str, inv_ai,ead_ai) -> bytes:
     df = build_output_df(matches)
 
     wb = load_workbook(template_path)
     ws = wb.active
 
     # --- Fill INVOICE LEVEL DATA ---
-    ws["C3"] = inv_ai.supplier_name
+    ws["C3"] = ead_ai.supplier_name
     ws["C4"] = inv_ai.supplier_eori
     ws["C5"] = inv_ai.supplier_rex
     ws["C6"] = inv_ai.incoterm
