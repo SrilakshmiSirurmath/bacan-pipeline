@@ -1,6 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel
 from openai import OpenAI
+import streamlit as st
 
 def get_openai_client() -> OpenAI:
     api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
