@@ -71,12 +71,6 @@ def run_one_job(invoice_pdf_bytes: bytes, ead_pdf_bytes: bytes, model: str) -> T
 
         df = build_output_df(matches)
 
-        # # Write excel to bytes
-        # excel_buf = io.BytesIO()
-        # with pd.ExcelWriter(excel_buf, engine="openpyxl") as writer:
-        #     df.to_excel(writer, index=False, sheet_name="Packing List")
-        # excel_bytes = excel_buf.getvalue()
-
         excel_bytes = build_customs_excel(
         matches,
         template_path=Path(__file__).parent / "Packing List template.xlsx",
