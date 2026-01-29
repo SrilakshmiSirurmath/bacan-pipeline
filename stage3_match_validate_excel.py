@@ -624,8 +624,6 @@ def build_output_df(matches):
             "DESCRIPTION": (
                 (ead.get("designazione_commerciale") if ead else None)
                 or (ead.get("designation") if ead else None)
-                or (ead.get("description") if ead else None)
-                or inv.get("description")
             ),
 
             "DENOMINAZIONE DI ORIGINE": (ead.get("denominazione_origine") if ead else None),
