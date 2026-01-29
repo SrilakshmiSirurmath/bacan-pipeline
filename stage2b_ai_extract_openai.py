@@ -15,9 +15,6 @@ client = get_openai_client()
 # For EAD rows, invoice_value/lot may be null.
 class PackingRow(BaseModel):
     # shared identifiers
-    supplier_name: Optional[str] = None
-    supplier_eori: Optional[str] = None
-    supplier_rex: Optional[str] = None
     description: Optional[str] = None
     designation: Optional[str] = None  # EAD can call it designation
     denominazione_origine: Optional[str] = None
@@ -41,6 +38,9 @@ class PackingRow(BaseModel):
     ead_net_kg: Optional[float] = None
 
 class InvoiceAI(BaseModel):
+    supplier_name: Optional[str] = None
+    supplier_eori: Optional[str] = None
+    supplier_rex: Optional[str] = None
     invoice_number: Optional[str] = None
     invoice_date: Optional[str] = None
     arc: Optional[str] = None
@@ -50,6 +50,7 @@ class InvoiceAI(BaseModel):
     lot: Optional[str] = None
 
 class EADAI(BaseModel):
+    supplier_name: Optional[str] = None
     arc: Optional[str] = None
     invoice_number: Optional[str] = None
     invoice_date: Optional[str] = None
