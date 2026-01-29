@@ -25,15 +25,39 @@ import pandas as pd
 from stage2b_ai_extract_openai import ai_extract_invoice, ai_extract_ead
 from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
 
+def shipper_name_from_ead_text(ead_text: str) -> str | None:
+    t = ead_text or ""
+    # keep line structure
+    lines = [ln.strip() for ln in t.splitlines() if ln.strip()]
 
-def build_customs_excel(matches, template_path: str, inv_ai,ead_ai) -> bytes:
+    for i, ln in enumerate(lines):
+        if re.search(r"\(2\.b\)\s*Nome\s+dello\s+speditore\s*:", ln, re.IGNORECASE):
+            # what comes after colon (often just "AGRICOLA")
+            parts = ln.split(":", 1)
+            tail = parts[1].strip() if len(parts) > 1 else ""
+
+            # previous line often contains the start of company name
+            prev = lines[i-1] if i > 0 else ""
+
+            # Combine safely
+            full = f"{prev} {tail}".strip()
+            full = re.sub(r"\s+", " ", full)
+
+            return full if full else None
+
+    return None
+
+
+def build_customs_excel(matches, template_path: str, inv_ai, ead_ai) -> bytes:
     df = build_output_df(matches)
 
     wb = load_workbook(template_path)
     ws = wb.active
 
+    shipper_name = ship_name = shipper_name_from_ead_text(ead_ai)
+
     # --- Fill INVOICE LEVEL DATA ---
-    ws["C3"] = inv_ai.supplier_name
+    ws["C3"] = shipper_name
     ws["C4"] = inv_ai.supplier_eori
     ws["C5"] = inv_ai.supplier_rex
     ws["C6"] = inv_ai.incoterm
