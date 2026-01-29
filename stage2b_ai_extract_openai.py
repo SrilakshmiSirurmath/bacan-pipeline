@@ -85,11 +85,11 @@ Extraction rules:
 5) If cases is missing but bottles_total is present, set bottles_total and leave cases null.
 6) If a value is not present, set it to null. Do not guess.
 
-Additionally extract the following from the invoice header/footer if present:
+Additionally extract from the invoice header:
 
-- supplier_name: the wine producer/seller company name (often near address block)
-- supplier_eori: value following “Codice EORI” or “EORI”
-- supplier_rex: value following “Numero Rex” or “Rex”
+- supplier_name: the winery / issuer of the invoice (not the buyer, not the transporter)
+- supplier_eori: EORI code of the supplier
+- supplier_rex: REX number of the supplier
 - incoterm: value following “Incoterms =” or similar
 
 These fields are usually in header or footer sections, not in the product table.
