@@ -67,18 +67,17 @@ def build_customs_excel(matches, template_path: str, inv_ai) -> bytes:
             ws[f"{col}{r}"] = None
 
     # --- Dynamic TOTAL row ---
-    total_row = start_row + len(df)
+    total_row = start_row + len(df) + 1
 
     ws[f"C{total_row}"] = "TOTAL"
-    ws[f"E{total_row}"] = f"=SUM(E{start_row}:E{total_row-1})"
-    ws[f"F{total_row}"] = f"=SUM(F{start_row}:F{total_row-1})"
-    ws[f"G{total_row}"] = f"=SUM(G{start_row}:G{total_row-1})"
-    ws[f"H{total_row}"] = f"=SUM(H{start_row}:H{total_row-1})"
+    ws[f"E{total_row}"] = f"=SUM(E{start_row}:E{total_row-2})"
+    ws[f"F{total_row}"] = f"=SUM(F{start_row}:F{total_row-2})"
+    ws[f"G{total_row}"] = f"=SUM(G{start_row}:G{total_row-2})"
+    ws[f"H{total_row}"] = f"=SUM(H{start_row}:H{total_row-2})"
 
     buf = BytesIO()
     wb.save(buf)
     return buf.getvalue()
-
 
 # ------------------------------------------------------------
 # Similarity: rapidfuzz (if installed) or lightweight fallback
