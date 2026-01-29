@@ -19,6 +19,7 @@ from stage3_match_validate_excel import (
     validate_shipment,
     validate_lines,
     build_output_df,
+    build_customs_excel
 )
 
 @dataclass
@@ -59,7 +60,8 @@ def run_one_job(invoice_pdf_bytes: bytes, ead_pdf_bytes: bytes, model: str) -> T
 
         shipment_issues = validate_shipment(
         inv_ai, ead_ai, inv["lines"], ead["lines"],
-        invoice_text=invoice_text, ead_text=ead_text)
+        invoice_text=invoice_text, ead_text=ead_text
+    )
 
         # Matching + line-level checks
         matches = match_invoice_to_ead(inv["lines"], ead["lines"])
@@ -67,13 +69,19 @@ def run_one_job(invoice_pdf_bytes: bytes, ead_pdf_bytes: bytes, model: str) -> T
 
         issues = shipment_issues + line_issues
 
-        df = build_output_df(matches)
+        # df = build_output_df(matches)
 
-        # Write excel to bytes
-        excel_buf = io.BytesIO()
-        with pd.ExcelWriter(excel_buf, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Packing List")
-        excel_bytes = excel_buf.getvalue()
+        # # Write excel to bytes
+        # excel_buf = io.BytesIO()
+        # with pd.ExcelWriter(excel_buf, engine="openpyxl") as writer:
+        #     df.to_excel(writer, index=False, sheet_name="Packing List")
+        # excel_bytes = excel_buf.getvalue()
+
+        excel_bytes = build_customs_excel(
+        matches,
+        template_path="Packing List template.xlsx"
+        )
+
 
         issues_json_bytes = json.dumps(issues, indent=2).encode("utf-8")
         return df, issues, excel_bytes, issues_json_bytes
