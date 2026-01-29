@@ -111,7 +111,7 @@ with col2:
     eads = st.file_uploader("EAD PDFs", type=["pdf"], accept_multiple_files=True)
 
 st.info(
-    "Bulk mode pairs files by **sorted filename order** (Invoice #1 with EAD #1, etc.). "
+    "Single and bulk mode pairs files by **sorted filename order** (Invoice #1 with EAD #1, etc.). "
     "So please name them consistently (e.g., 001_invoice.pdf / 001_ead.pdf)."
 )
 
