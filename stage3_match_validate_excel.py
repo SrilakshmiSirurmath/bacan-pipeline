@@ -28,13 +28,14 @@ from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
 def country_from_denom(denom: str) -> str:
     d = (denom or "").upper()
 
-    if any(x in d for x in ["DOC", "DOCG", "IGT", "SICILIA", "ITALIA", "NERO D'AVOLA"]):
+    italy_tokens = ["DOC", "DOCG", "IGT", "IGP", "SICILIA", "SICILIANE", "ITALIA", "NERO D'AVOLA", "TERRE"]
+    if any(t in d for t in italy_tokens):
         return "Italy"
 
-    if any(x in d for x in ["AOC", "AOP", "BORDEAUX", "BURGUNDY", "CHAMPAGNE"]):
+    if any(t in d for t in ["AOC", "AOP", "BORDEAUX", "BOURGOGNE", "CHAMPAGNE"]):
         return "France"
 
-    if any(x in d for x in ["DO", "DOCA", "RIOJA", "RIBERA"]):
+    if any(t in d for t in ["DOCA", "DOCa", "DO", "RIOJA", "RIBERA"]):
         return "Spain"
 
     return ""
