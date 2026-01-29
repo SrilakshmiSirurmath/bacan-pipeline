@@ -48,13 +48,13 @@ def shipper_name_from_ead_text(ead_text: str) -> str | None:
     return None
 
 
-def build_customs_excel(matches, template_path: str, inv_ai, ead_ai) -> bytes:
+def build_customs_excel(matches, template_path: str, inv_ai, ead_text) -> bytes:
     df = build_output_df(matches)
 
     wb = load_workbook(template_path)
     ws = wb.active
 
-    shipper_name = ship_name = shipper_name_from_ead_text(ead_ai)
+    shipper_name = ship_name = shipper_name_from_ead_text(ead_text)
 
     # --- Fill INVOICE LEVEL DATA ---
     ws["C3"] = shipper_name
