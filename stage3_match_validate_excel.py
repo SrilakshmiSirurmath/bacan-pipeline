@@ -192,7 +192,6 @@ def liters_from_invoice(inv_line):
       bottles_total * bottle_liters (ONLY if bottles_total seems like a count)
     """
     cases = inv_line.get("cases")
-   #print(cases,"a")
     bpc = inv_line.get("bottles_per_case")
     bl = normalize_bottle_liters(inv_line.get("bottle_liters"))
 
@@ -248,114 +247,6 @@ def extract_ead_packaging_colli_sum(ead_text: str) -> int | None:
     vals = [parse_int_loose(x) for x in colli]
     vals = [v for v in vals if v is not None]
     return sum(vals) if vals else None
-
-
-# def parse_ead_progressivo_blocks(ead_text: str) -> dict[int, str]:
-#     """
-#     Split EAD raw text by 'PROGRESSIVO N. X' => {X: block_text}
-#     """
-#     t = ead_text or ""
-#     blocks: dict[int, str] = {}
-
-#     parts = re.split(r"\bPROGRESSIVO\s+N\.\s*(\d+)\b", t, flags=re.IGNORECASE)
-#     # [pre, '1', block1, '2', block2, ...]
-#     for i in range(1, len(parts), 2):
-#         prog = parse_int_loose(parts[i])
-#         block = parts[i + 1] if i + 1 < len(parts) else ""
-#         if prog is not None:
-#             blocks[int(prog)] = block
-#     return blocks
-
-
-# def extract_denominazione_and_designazione(block: str) -> tuple[str | None, str | None]:
-#     """
-#     Robust extraction for:
-#       - Denominazione di origine
-#       - Designazione commerciale
-
-#     Works even when pdf text is messy:
-#       "Denominazione di (17.2.m) LNG Denominazione di
-#        origine: GRILLO D.O.C. SICILIA origine: it"
-#     or without (17.x.l) numbering entirely.
-#     """
-#     b = block or ""
-#     b = re.sub(r"\s+", " ", b)  # normalize whitespace hard
-
-#     def clean_val(s: str) -> str:
-#         s = re.sub(r"\s+", " ", s).strip()
-#         # remove language tails like "origine: it" or "commerciale: it"
-#         s = re.sub(r"\borigine\s*:\s*[a-z]{2}\b", "", s, flags=re.IGNORECASE).strip()
-#         s = re.sub(r"\bcommerciale\s*:\s*[a-z]{2}\b", "", s, flags=re.IGNORECASE).strip()
-#         # remove any trailing duplicated "origine:" fragments
-#         s = re.sub(r"\borigine\s*:\s*$", "", s, flags=re.IGNORECASE).strip()
-#         return s
-
-#     # --- Denominazione di origine ---
-#     denom = None
-
-#     # 1) Most common: "... Denominazione di origine: <VALUE> ..."
-#     m = re.search(
-#         r"Denominazione\s+di\s+origine\s*:\s*(.+?)(?="
-#         r"\bDesignazione\b|\bMarchio\b|\bTitolo\b|\bCodice\b|\bMassa\b|\bDensit|"
-#         r"\bPeriodo\b|\bDichiarazione\b|\(\s*17\.\d+\.[a-z]\s*\)|$)",
-#         b,
-#         flags=re.IGNORECASE,
-#     )
-#     if m:
-#         denom = clean_val(m.group(1))
-
-#     # 2) Broken label: "Denominazione di ... origine: <VALUE>"
-#     if not denom:
-#         m = re.search(
-#             r"Denominazione\s+di.*?origine\s*:\s*(.+?)(?="
-#             r"\bDesignazione\b|\bMarchio\b|\bTitolo\b|\bCodice\b|\bMassa\b|\bDensit|"
-#             r"\bPeriodo\b|\bDichiarazione\b|\(\s*17\.\d+\.[a-z]\s*\)|$)",
-#             b,
-#             flags=re.IGNORECASE,
-#         )
-#         if m:
-#             denom = clean_val(m.group(1))
-
-#     if denom == "":
-#         denom = None
-
-#     # --- Designazione commerciale ---
-#     design = None
-
-#     m = re.search(
-#         r"Designazione\s+commerciale\s*:\s*(.+?)(?="
-#         r"\bMarchio\b|\bTitolo\b|\bCodice\b|\bMassa\b|\bDensit|"
-#         r"\bPeriodo\b|\bDichiarazione\b|\(\s*17\.\d+\.[a-z]\s*\)|$)",
-#         b,
-#         flags=re.IGNORECASE,
-#     )
-#     if m:
-#         design = clean_val(m.group(1))
-
-#     if design == "":
-#         design = None
-
-#     return denom, design
-
-
-# def extract_ead_origin_maps(ead_text: str) -> tuple[dict[int, str], dict[int, str]]:
-#     """
-#     denom_map[progressivo]  = Denominazione di origine
-#     design_map[progressivo] = Designazione commerciale
-#     """
-#     blocks = parse_ead_progressivo_blocks(ead_text)
-#     denom_map: dict[int, str] = {}
-#     design_map: dict[int, str] = {}
-
-#     for prog, block in blocks.items():
-#         denom, design = extract_denominazione_and_designazione(block)
-#         if denom:
-#             denom_map[prog] = denom
-#         if design:
-#             design_map[prog] = design
-
-#     return denom_map, design_map
-
 
 # -----------------------------
 # Normalizers (AI -> dict lines)
@@ -725,32 +616,6 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
     return issues
 
 
-# -----------------------------
-# Output
-# -----------------------------
-#def build_output_df(matches):
-    #rows = []
-    #for inv, ead, score in matches:
-        #rows.append({
-            #"DESCRIPTION": inv.get("description"),
-            #"DENOMINAZIONE DI ORIGINE": (ead.get("denominazione_origine") if ead else None),
-            #"CUSTOMS COMMODITY CODE": inv.get("cn_code") or (ead.get("cn_code") if ead else None),
-            #"% ALCOHOL": inv.get("abv_percent") if inv.get("abv_percent") is not None else (ead.get("abv_percent") if ead else None),
-            #"CASES / COLLI": inv.get("cases") or (ead.get("cases") if ead else None),
-            #"BOTTLES PER CASE": inv.get("bottles_per_case"),
-            #"BOTTLE SIZE (L)": normalize_bottle_liters(inv.get("bottle_liters")),
-            #"TOTAL LITERS (calc)": liters_from_invoice(inv),
-            #"EAD LITERS": ead.get("ead_liters") if ead else None,
-            #"GROSS WEIGHT (KG)": ead.get("ead_gross_kg") if ead else None,
-            #"NET WEIGHT (KG)": ead.get("ead_net_kg") if ead else None,
-            #"INVOICE VALUE (EUR)": inv.get("invoice_value_eur"),
-            #"LOT": inv.get("lot"),
-            #"EAD PROGRESSIVO": ead.get("progressivo") if ead else None,
-            #"MATCH_SCORE": score,
-       # })
-    #return pd.DataFrame(rows)
-
-
 def build_output_df(matches):
     rows = []
     for inv, ead, score in matches:
@@ -831,16 +696,9 @@ def main():
     inv_ai = ai_extract_invoice(inv_safe)
     ead_ai = ai_extract_ead(ead_safe)
 
-    # Deterministic extraction for EAD origin & commercial designation
-    # denom_map, design_map = extract_ead_origin_maps(ead_text)
-    # print("DEBUG denom_map keys:", sorted(list(denom_map.keys()))[:10])
-    # print("DEBUG sample denom:", next(iter(denom_map.items()), None))
-
     # Normalize
     inv = normalize_invoice_rows(inv_ai)
     ead = normalize_ead_rows(ead_ai)
-    print(ead)
-    print(inv)
 
     # Shipment-level checks
     shipment_issues = validate_shipment(
