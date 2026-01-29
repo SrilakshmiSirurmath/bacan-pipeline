@@ -38,6 +38,9 @@ class PackingRow(BaseModel):
     ead_net_kg: Optional[float] = None
 
 class InvoiceAI(BaseModel):
+    supplier_name: Optional[str] = None
+    supplier_eori: Optional[str] = None
+    supplier_rex: Optional[str] = None
     invoice_number: Optional[str] = None
     invoice_date: Optional[str] = None
     arc: Optional[str] = None
@@ -81,6 +84,16 @@ Extraction rules:
    (In these, bottles_per_case=6 or 12 and bottle_liters=0.75)
 5) If cases is missing but bottles_total is present, set bottles_total and leave cases null.
 6) If a value is not present, set it to null. Do not guess.
+
+Additionally extract the following from the invoice header/footer if present:
+
+- supplier_name: the wine producer/seller company name (often near address block)
+- supplier_eori: value following “Codice EORI” or “EORI”
+- supplier_rex: value following “Numero Rex” or “Rex”
+- incoterm: value following “Incoterms =” or similar
+
+These fields are usually in header or footer sections, not in the product table.
+Return null if not present.
 
 Return one row per product line. Do not merge different wines into one row.
 
