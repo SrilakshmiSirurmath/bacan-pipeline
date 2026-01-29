@@ -623,7 +623,6 @@ def build_output_df(matches):
             # Prefer EAD description if present (designazione commerciale is the cleanest)
             "DESCRIPTION": (
                 (ead.get("designazione_commerciale") if ead else None)
-                or (ead.get("designation") if ead else None)
             ),
 
             "DENOMINAZIONE DI ORIGINE": (ead.get("denominazione_origine") if ead else None),
