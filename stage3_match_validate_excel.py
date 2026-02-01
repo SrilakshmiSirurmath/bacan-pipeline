@@ -78,15 +78,25 @@ def extract_invoice_compliance(invoice_text: str) -> dict:
         out["supplier_eori"] = m.group(1).strip()
 
     # Colli / weights (you already have something similar, keep yours if preferred)
-    m = re.search(r"\bN\.?ro\s+Colli\b\s*([0-9\.\,]+)", t, re.IGNORECASE)
+    m = re.search(r"\bN\.?ro\s+Colli\b[\s\S]{0,80}?([0-9][0-9\.\,]*)", t, re.IGNORECASE)
     if m:
         out["total_colli"] = parse_int_loose(m.group(1))
 
-    m = re.search(r"\bPeso\s+Lordo\b.*?\bKg\b\.?\s*([0-9\.\,]+)", t, re.IGNORECASE)
+    # Peso lordo
+    m = re.search(
+    r"\bPeso\s+Lordo\s+Kg\b\.?\s*([0-9][0-9\.\,]*)",
+    t,
+    re.IGNORECASE | re.DOTALL
+    )
     if m:
         out["gross_kg"] = parse_float_locale(m.group(1))
 
-    m = re.search(r"\bpeso\s+netto\b.*?\bkg\b\.?\s*([0-9\.\,]+)", t, re.IGNORECASE)
+    # Peso netto
+    m = re.search(
+    r"\bpeso\s+netto\s+Kg\b\.?\s*([0-9][0-9\.\,]*)",
+    t,
+    re.IGNORECASE | re.DOTALL
+    )
     if m:
         out["net_kg"] = parse_float_locale(m.group(1))
 
@@ -345,16 +355,28 @@ def extract_invoice_totals(invoice_text: str) -> dict:
     if m:
         out["invoice_total_colli"] = parse_int_loose(m.group(1))
 
-    m = re.search(r"\bPeso\s+lordo\b.*?\bKG\b[:\s]*([0-9\.\,]+)", t, re.IGNORECASE)
+    m = re.search(
+    r"\bPeso\s+Lordo\s+Kg\b\.?\s*([0-9][0-9\.\,]*)",
+    t,
+    re.IGNORECASE | re.DOTALL
+    )
+    print("DEBUG gross match:", m.group(1) if m else None)
     if m:
         out["invoice_gross_kg"] = parse_float_locale(m.group(1))
+    print("DEBUG parsed gross_kg:", out["invoice_gross_kg"], type(out["invoice_gross_kg"]))
 
-    m = re.search(r"\bpeso\s+netto\b.*?\bkg\b\.?[:\s]*([0-9\.\,]+)", t, re.IGNORECASE)
+
+    m = re.search(
+    r"\bPeso\s+netto\s+Kg\b\.?\s*([0-9][0-9\.\,]*)",
+    t,
+    re.IGNORECASE | re.DOTALL
+    )
+    print("DEBUG gross match:", m.group(1) if m else None)
     if m:
         out["invoice_net_kg"] = parse_float_locale(m.group(1))
+    print("DEBUG parsed gross_kg:", out["invoice_net_kg"], type(out["invoice_net_kg"]))
 
     return out
-
 
 def extract_ead_packaging_colli_sum(ead_text: str) -> int | None:
     t = ead_text or ""
