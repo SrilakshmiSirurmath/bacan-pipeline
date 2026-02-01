@@ -700,7 +700,7 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
         add("QUANTITY_INTEGRITY_CHECK", "TOTAL_GROSS_LE_NET", "WARN",
             ead_gross_total=ead_gross_sum, ead_net_total=ead_net_sum)
 
-    # NEW: invoice total colli vs sum(EAD Numero di colli) from packaging section
+    # invoice total colli vs sum(EAD Numero di colli) from packaging section
     inv_meta = extract_invoice_totals(invoice_text)
     inv_total_colli = inv_meta.get("invoice_total_colli")
     ead_colli_sum = extract_ead_packaging_colli_sum(ead_text)
@@ -709,6 +709,56 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
         if int(inv_total_colli) != int(ead_colli_sum):
             add("QUANTITY_INTEGRITY_CHECK", "TOTAL_COLLI_MISMATCH", "FAIL",
                 invoice_total_colli=inv_total_colli, ead_packaging_colli_sum=ead_colli_sum)
+
+    # ------------------------------------------------------------
+    # cross-doc weight consistency (Invoice totals vs EAD sums)
+    # ------------------------------------------------------------
+    inv_gross = inv_meta.get("invoice_gross_kg")
+    inv_net = inv_meta.get("invoice_net_kg")
+
+    # Choose tolerances (weights are often rounded in docs)
+    # absolute tolerance: 2 kg
+    # relative tolerance: 1% of invoice value
+    def close_enough(a, b, abs_tol=0.0, rel_tol=0.01):
+        if a is None or b is None:
+            return False
+        try:
+            a = float(a); b = float(b)
+        except Exception:
+            return False
+        return abs(a - b) <= max(abs_tol, rel_tol * max(abs(a), abs(b)))
+
+    # Gross weight comparison
+    if inv_gross is not None and ead_gross_sum is not None:
+        if not close_enough(inv_gross, ead_gross_sum, abs_tol=3.0, rel_tol=0.01):
+            add(
+                "QUANTITY_INTEGRITY_CHECK",
+                "GROSS_KG_INVOICE_VS_EAD_MISMATCH",
+                "WARN",  # could be FAIL if you want strict
+                invoice_gross_kg=inv_gross,
+                ead_gross_kg_sum=ead_gross_sum,
+                diff=abs(float(inv_gross) - float(ead_gross_sum)),
+            )
+    elif inv_gross is not None and ead_gross_sum is None:
+        add("COMPLETENESS_CHECK", "MISSING_EAD_GROSS_TOTAL", "WARN", invoice_gross_kg=inv_gross)
+    elif inv_gross is None and ead_gross_sum is not None:
+        add("COMPLETENESS_CHECK", "MISSING_INVOICE_GROSS_KG", "WARN", ead_gross_kg_sum=ead_gross_sum)
+
+    # Net weight comparison
+    if inv_net is not None and ead_net_sum is not None:
+        if not close_enough(inv_net, ead_net_sum, abs_tol=3.0, rel_tol=0.01):
+            add(
+                "QUANTITY_INTEGRITY_CHECK",
+                "NET_KG_INVOICE_VS_EAD_MISMATCH",
+                "WARN",
+                invoice_net_kg=inv_net,
+                ead_net_kg_sum=ead_net_sum,
+                diff=abs(float(inv_net) - float(ead_net_sum)),
+            )
+    elif inv_net is not None and ead_net_sum is None:
+        add("COMPLETENESS_CHECK", "MISSING_EAD_NET_TOTAL", "WARN", invoice_net_kg=inv_net)
+    elif inv_net is None and ead_net_sum is not None:
+        add("COMPLETENESS_CHECK", "MISSING_INVOICE_NET_KG", "WARN", ead_net_kg_sum=ead_net_sum)
 
     # NEW: packaging sanity: total bottles / total colli ≈ bottles_per_case mode
     total_bottles = 0
