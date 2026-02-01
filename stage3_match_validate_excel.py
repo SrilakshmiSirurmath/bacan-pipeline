@@ -98,6 +98,8 @@ def extract_invoice_compliance(invoice_text: str) -> dict:
     return out
 
 def country_from_denom(denom: str) -> str:
+    if not isinstance(denom, str):
+        denom = ""
     d = (denom or "").upper()
 
     italy_tokens = ["DOC", "DOCG", "IGT", "IGP", "SICILIA", "SICILIANE", "ITALIA", "NERO D'AVOLA", "TERRE"]
@@ -626,7 +628,8 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
 
     def add(check_class, issue_type, severity, **kwargs):
         issues.append({"check_class": check_class, "type": issue_type, "severity": severity, **kwargs})
-     inv_comp = extract_invoice_compliance(invoice_text)
+    
+    inv_comp = extract_invoice_compliance(invoice_text)
     # ------------------------------------------------------------
     # invoice weight presence check
     # ------------------------------------------------------------
