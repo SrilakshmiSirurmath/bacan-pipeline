@@ -25,6 +25,66 @@ import pandas as pd
 from stage2b_ai_extract_openai import ai_extract_invoice, ai_extract_ead
 from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
 
+def extract_invoice_compliance(invoice_text: str) -> dict:
+    t = invoice_text or ""
+
+    out = {
+        "supplier_vat": None,           # P.IVA
+        "supplier_cod_fisc": None,      # Cod.Fisc. (often same line)
+        "supplier_eori": None,          # Codice EORI (exporter)
+        "supplier_rex": None,           # Numero REX
+        "consignee_eori": None,         # Codice Eori destinatario
+        "incoterm": None,               # Incoterms = EXW ...
+        "total_colli": None,            # N.ro Colli
+        "gross_kg": None,               # Peso lordo KG
+        "net_kg": None,                 # peso netto kg
+        "pallet_count": None,           # "posti su 2 pallet"
+    }
+
+    # VAT / Cod.Fisc / P.IVA (simple heuristic)
+    m = re.search(r"\bCod\.?Fisc\.?\s*e\s*P\.?Iva\s+([0-9]+)", t, re.IGNORECASE)
+    if m:
+        out["supplier_vat"] = m.group(1).strip()
+
+    # Consignee EORI (destinatario)
+    m = re.search(r"\bCodice\s+Eori\s+destinatario\s*=\s*([A-Z0-9]+)", t, re.IGNORECASE)
+    if m:
+        out["consignee_eori"] = m.group(1).strip()
+
+    # Incoterm
+    m = re.search(r"\bIncoterms?\s*=\s*([A-Z]{3})", t, re.IGNORECASE)
+    if m:
+        out["incoterm"] = m.group(1).upper().strip()
+
+    # Supplier REX + EORI (exporter)
+    m = re.search(r"\bNumero\s+Rex\s+([A-Z0-9]+)", t, re.IGNORECASE)
+    if m:
+        out["supplier_rex"] = m.group(1).strip()
+
+    m = re.search(r"\bCodice\s+EORI\s+([A-Z0-9]+)", t, re.IGNORECASE)
+    if m:
+        out["supplier_eori"] = m.group(1).strip()
+
+    # Colli / weights (you already have something similar, keep yours if preferred)
+    m = re.search(r"\bN\.?ro\s+Colli\b\s*([0-9\.\,]+)", t, re.IGNORECASE)
+    if m:
+        out["total_colli"] = parse_int_loose(m.group(1))
+
+    m = re.search(r"\bPeso\s+Lordo\b.*?\bKg\b\.?\s*([0-9\.\,]+)", t, re.IGNORECASE)
+    if m:
+        out["gross_kg"] = parse_float_locale(m.group(1))
+
+    m = re.search(r"\bpeso\s+netto\b.*?\bkg\b\.?\s*([0-9\.\,]+)", t, re.IGNORECASE)
+    if m:
+        out["net_kg"] = parse_float_locale(m.group(1))
+
+    # pallets (basic)
+    m = re.search(r"\bposti\s+su\s+(\d+)\s+pallet", t, re.IGNORECASE)
+    if m:
+        out["pallet_count"] = int(m.group(1))
+
+    return out
+
 def country_from_denom(denom: str) -> str:
     d = (denom or "").upper()
 
@@ -554,7 +614,28 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
 
     def add(check_class, issue_type, severity, **kwargs):
         issues.append({"check_class": check_class, "type": issue_type, "severity": severity, **kwargs})
+     inv_comp = extract_invoice_compliance(invoice_text)
+   #ead_comp = extract_ead_compliance(ead_text)
 
+    # ---- Compliance completeness checks (Invoice) ----
+    mandatory_invoice = [
+        ("supplier_vat", "MISSING_SUPPLIER_VAT"),
+        ("supplier_eori", "MISSING_SUPPLIER_EORI"),
+        ("supplier_rex", "MISSING_SUPPLIER_REX"),
+        ("consignee_eori", "MISSING_CONSIGNEE_EORI"),
+        ("incoterm", "MISSING_INCOTERM"),
+        ("total_colli", "MISSING_TOTAL_COLLI"),
+        ("gross_kg", "MISSING_GROSS_KG"),
+        ("net_kg", "MISSING_NET_KG"),
+    ]
+    for key, issue_type in mandatory_invoice:
+        if not inv_comp.get(key):
+            add("COMPLETENESS_CHECK", issue_type, "FAIL")
+
+    # Pallets: often required but sometimes absent -> warn (your choice)
+    if not inv_comp.get("pallet_count"):
+        add("COMPLETENESS_CHECK", "MISSING_PALLET_COUNT", "WARN")
+        
     inv_no = getattr(inv_ai, "invoice_number", None)
     ead_no = getattr(ead_ai, "invoice_number", None)
     inv_date = getattr(inv_ai, "invoice_date", None)
