@@ -700,6 +700,7 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
     inv_liters_sum = sum(inv_liters_vals) if inv_liters_vals else None
 
     ead_liters_vals = []
+    
     for l in ead_lines:
         lit = liters_from_invoice(l)
         if lit is not None:
