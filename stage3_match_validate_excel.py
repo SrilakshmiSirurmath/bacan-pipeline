@@ -147,9 +147,9 @@ def build_customs_excel(matches, template_path: str, inv_ai, ead_text) -> bytes:
 
     # --- Fill INVOICE LEVEL DATA ---
     ws["C3"] = shipper_name
-    ws["C4"] = inv_ai.supplier_eori
-    ws["C5"] = inv_ai.supplier_rex
-    ws["C6"] = inv_ai.incoterm
+    ws["C4"] = getattr(inv_ai, "supplier_eori", None)
+    ws["C5"] = getattr(inv_ai, "supplier_rex", None)
+    ws["C6"] = getattr(inv_ai, "incoterm", None)
 
     start_row = 14  # where items start in template
 
@@ -158,8 +158,12 @@ def build_customs_excel(matches, template_path: str, inv_ai, ead_text) -> bytes:
         r = start_row + idx
 
         pieces = None
-        if row["CASES / COLLI"] and row["BOTTLES PER CASE"]:
-            pieces = int(row["CASES / COLLI"]) * int(row["BOTTLES PER CASE"])
+        cases = row.get("CASES / COLLI")
+        bpc = row.get("BOTTLES PER CASE")
+        if pd.notna(cases) and pd.notna(bpc):
+            pieces = int(cases) * int(bpc)
+        else:
+            pieces = None
 
         ws[f"A{r}"] = idx + 1
         ws[f"B{r}"] = row["DESCRIPTION"]
