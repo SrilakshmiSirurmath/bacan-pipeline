@@ -25,6 +25,18 @@ import pandas as pd
 from stage2b_ai_extract_openai import ai_extract_invoice, ai_extract_ead
 from stage1b_redact_trim import redact, trim_invoice_text, trim_ead_text
 
+# Choose tolerances (weights are often rounded in docs)
+    # absolute tolerance: 2 kg
+    # relative tolerance: 1% of invoice value
+def close_enough(a, b, abs_tol=0.0, rel_tol=0.01):
+    if a is None or b is None:
+        return False
+    try:
+        a = float(a); b = float(b)
+    except Exception:
+        return False
+    return abs(a - b) <= max(abs_tol, rel_tol * max(abs(a), abs(b)))
+
 def extract_invoice_compliance(invoice_text: str) -> dict:
     t = invoice_text or ""
 
@@ -615,8 +627,16 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
     def add(check_class, issue_type, severity, **kwargs):
         issues.append({"check_class": check_class, "type": issue_type, "severity": severity, **kwargs})
      inv_comp = extract_invoice_compliance(invoice_text)
-   #ead_comp = extract_ead_compliance(ead_text)
+    # ------------------------------------------------------------
+    # invoice weight presence check
+    # ------------------------------------------------------------
+    inv_meta = extract_invoice_totals(invoice_text)
 
+    if inv_meta.get("invoice_gross_kg") is None:
+        add("COMPLETENESS_CHECK", "MISSING_INVOICE_GROSS_KG", "WARN")
+
+    if inv_meta.get("invoice_net_kg") is None:
+        add("COMPLETENESS_CHECK", "MISSING_INVOICE_NET_KG", "WARN")
     # ---- Compliance completeness checks (Invoice) ----
     mandatory_invoice = [
         ("supplier_vat", "MISSING_SUPPLIER_VAT"),
@@ -628,6 +648,7 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
         ("gross_kg", "MISSING_GROSS_KG"),
         ("net_kg", "MISSING_NET_KG"),
     ]
+
     for key, issue_type in mandatory_invoice:
         if not inv_comp.get(key):
             add("COMPLETENESS_CHECK", issue_type, "FAIL")
@@ -701,7 +722,6 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
             ead_gross_total=ead_gross_sum, ead_net_total=ead_net_sum)
 
     # invoice total colli vs sum(EAD Numero di colli) from packaging section
-    inv_meta = extract_invoice_totals(invoice_text)
     inv_total_colli = inv_meta.get("invoice_total_colli")
     ead_colli_sum = extract_ead_packaging_colli_sum(ead_text)
 
@@ -715,18 +735,6 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
     # ------------------------------------------------------------
     inv_gross = inv_meta.get("invoice_gross_kg")
     inv_net = inv_meta.get("invoice_net_kg")
-
-    # Choose tolerances (weights are often rounded in docs)
-    # absolute tolerance: 2 kg
-    # relative tolerance: 1% of invoice value
-    def close_enough(a, b, abs_tol=0.0, rel_tol=0.01):
-        if a is None or b is None:
-            return False
-        try:
-            a = float(a); b = float(b)
-        except Exception:
-            return False
-        return abs(a - b) <= max(abs_tol, rel_tol * max(abs(a), abs(b)))
 
     # Gross weight comparison
     if inv_gross is not None and ead_gross_sum is not None:
