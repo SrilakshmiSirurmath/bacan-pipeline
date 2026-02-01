@@ -77,7 +77,7 @@ def extract_invoice_compliance(invoice_text: str) -> dict:
     if m:
         out["supplier_eori"] = m.group(1).strip()
 
-    # Colli / weights (you already have something similar, keep yours if preferred)
+    # Colli / weights
     m = re.search(r"\bN\.?ro\s+Colli\b[\s\S]{0,80}?([0-9][0-9\.\,]*)", t, re.IGNORECASE)
     if m:
         out["total_colli"] = parse_int_loose(m.group(1))
