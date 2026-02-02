@@ -661,11 +661,14 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
     # ------------------------------------------------------------
     inv_meta = extract_invoice_totals(invoice_text)
 
-    if inv_meta.get("invoice_gross_kg") is None:
-        add("COMPLETENESS_CHECK", "MISSING_INVOICE_GROSS_KG", "WARN")
+    inv_gross_kg = inv_meta.get("invoice_gross_kg")
+    inv_net_kg = inv_meta.get("invoice_net_kg")
 
-    if inv_meta.get("invoice_net_kg") is None:
-        add("COMPLETENESS_CHECK", "MISSING_INVOICE_NET_KG", "WARN")
+    if inv_gross_kg is None:
+        add("COMPLETENESS_CHECK", "MISSING_INVOICE_GROSS_KG", "WARN",inv_gross_kg = inv_gross_kg)
+
+    if inv_net_kg is None:
+        add("COMPLETENESS_CHECK", "MISSING_INVOICE_NET_KG", "WARN",inv_net_kg = inv_net_kg)
     # ---- Compliance completeness checks (Invoice) ----
     mandatory_invoice = [
         ("supplier_vat", "MISSING_SUPPLIER_VAT"),
@@ -680,11 +683,11 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
 
     for key, issue_type in mandatory_invoice:
         if not inv_comp.get(key):
-            add("COMPLETENESS_CHECK", issue_type, "FAIL")
+            add("COMPLETENESS_CHECK", issue_type, "FAIL",field = inv_comp.get(key))
 
     # Pallets: often required but sometimes absent -> warn (your choice)
     if not inv_comp.get("pallet_count"):
-        add("COMPLETENESS_CHECK", "MISSING_PALLET_COUNT", "WARN")
+        add("COMPLETENESS_CHECK", "MISSING_PALLET_COUNT", "WARN",field = "pallet_count")
         
     inv_no = getattr(inv_ai, "invoice_number", None)
     ead_no = getattr(ead_ai, "invoice_number", None)
@@ -695,13 +698,13 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
 
     # Completeness (headers)
     if not inv_no:
-        add("COMPLETENESS_CHECK", "MISSING_INVOICE_NUMBER", "FAIL")
+        add("COMPLETENESS_CHECK", "MISSING_INVOICE_NUMBER", "FAIL", field = "inv_no")
     if not ead_no:
-        add("COMPLETENESS_CHECK", "MISSING_EAD_INVOICE_NUMBER", "FAIL")
+        add("COMPLETENESS_CHECK", "MISSING_EAD_INVOICE_NUMBER", "FAIL", field = "ead_no")
     if not inv_arc:
-        add("COMPLETENESS_CHECK", "MISSING_ARC_IN_INVOICE", "FAIL")
+        add("COMPLETENESS_CHECK", "MISSING_ARC_IN_INVOICE", "FAIL", field = "inv_arc")
     if not ead_arc:
-        add("COMPLETENESS_CHECK", "MISSING_ARC_IN_EAD", "FAIL")
+        add("COMPLETENESS_CHECK", "MISSING_ARC_IN_EAD", "FAIL", field = "ead_arc")
 
     # Document consistency
     if inv_arc and ead_arc and str(inv_arc).strip() != str(ead_arc).strip():
@@ -759,6 +762,14 @@ def validate_shipment(inv_ai, ead_ai, inv_lines, ead_lines, *, invoice_text: str
         if int(inv_total_colli) != int(ead_colli_sum):
             add("QUANTITY_INTEGRITY_CHECK", "TOTAL_COLLI_MISMATCH", "FAIL",
                 invoice_total_colli=inv_total_colli, ead_packaging_colli_sum=ead_colli_sum)
+
+    if inv_gross_kg is not None and ead_gross_sum is not None:
+        if abs(inv_gross_kg - ead_gross_sum) > 0:
+            add("COMPLETENESS_CHECK", "GROSS_KG_MISMATCH", "FAIL",inv_gross_kg=inv_gross_kg, ead_gross_sum=ead_gross_sum)
+
+    if inv_net_kg is not None and ead_net_sum is not None:
+        if abs(inv_net_kg - ead_net_sum) > 0:
+            add("COMPLETENESS_CHECK", "NET_KG_MISMATCH", "FAIL",inv_net_kg =inv_net_kg,ead_net_sum = ead_net_sum)
 
     # ------------------------------------------------------------
     # cross-doc weight consistency (Invoice totals vs EAD sums)
